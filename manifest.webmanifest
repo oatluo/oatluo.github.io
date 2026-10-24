@@ -1,0 +1,20 @@
+{
+  "name": "罗舜学习工作台·费曼错题本Pro",
+  "short_name": "罗舜工作台",
+  "description": "五年级学生错题管理·费曼讲解·知识图谱·艾宾浩斯复习·Boss挑战·AI/IMA协作（离线可用）",
+  "lang": "zh-CN",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f7ff",
+  "theme_color": "#2f6fed",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

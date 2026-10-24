@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2f6fed"/>
+      <stop offset="1" stop-color="#13b3a6"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- 书签/错题本 -->
+  <rect x="146" y="96" width="220" height="320" rx="22" fill="#ffffff" opacity="0.96"/>
+  <rect x="146" y="96" width="44" height="320" rx="22" fill="#ffd24d"/>
+  <circle cx="256" cy="200" r="34" fill="#2f6fed"/>
+  <path d="M232 330 l18 -22 16 26 16 -34 18 30" fill="none" stroke="#13b3a6" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- 五角星（成就） -->
+  <path d="M406 150 l13 27 29 4 -21 20 5 29 -26 -14 -26 14 5 -29 -21 -20 29 -4 z" fill="#ffd24d"/>
+</svg>

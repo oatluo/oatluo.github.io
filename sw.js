@@ -5,7 +5,7 @@
 const CACHE = "luoshun-wb-v1";
 const CORE = [
   "./",
-  "./罗舜_学习工作台.html",
+  "./index.html",
   "./manifest.webmanifest",
   "./icon.svg"
 ];

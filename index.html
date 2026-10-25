@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>罗舜的学习工作台 · 费曼错题本 Pro 本地版</title>
+<title>罗舜的学习工作台 · 费曼错题本 Pro</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#2f6fed">
 <style>
@@ -143,6 +143,7 @@
         <div class="saved-ind" id="savedInd">数据未改动</div>
       </div>
     </div>
+    <div id="loginBar"></div>
   </div>
 </header>
 <nav class="tabs"><div class="wrap" id="tabs"></div></nav>
@@ -179,6 +180,7 @@
         <select id="fSubject" style="max-width:150px"></select>
         <select id="fType" style="max-width:170px"></select>
         <select id="fStatus" style="max-width:150px"></select>
+        <select id="fChapter" style="max-width:170px"></select>
         <input id="fSearch" placeholder="搜索题目/知识点/来源…" style="max-width:260px">
         <button class="ghost" id="fReset">重置</button>
       </div>
@@ -307,7 +309,7 @@
     </div>
     <div class="card">
       <h2>💾 数据备份</h2>
-      <p class="muted">数据只存在本机浏览器。换电脑/清缓存前务必导出；导入可恢复。</p>
+      <p class="muted">登录后数据实时存到云端（按账号隔离，别人看不到你的数据），换手机/换浏览器登录同一账号即同步；未登录时仅存本机。无论是否登录，下方导出/导入与自动备份都可用，作为额外保险。</p>
       <div class="row" style="margin-top:10px">
         <button class="ghost" id="exportBtn">⬇️ 导出备份(JSON)</button>
         <button class="ghost" id="importBtn">⬆️ 导入备份</button>
@@ -324,7 +326,7 @@
           <select id="snapSelect" style="flex:1"></select>
           <button id="snapRestoreBtn">↩️ 恢复到此份</button>
         </div>
-        <p class="muted" style="margin-top:8px">每次保存都会自动留一份时间点备份；误删或导入出错，可在此一键还原到任意历史点。跨设备请用上方「导出 / 导入」。</p>
+        <p class="muted" style="margin-top:8px">每次保存都会自动留一份时间点备份；误删或导入出错，可在此一键还原到任意历史点。已登录云端时，跨设备请直接用「登录同步」，无需手动导出导入。</p>
       </div>
     </div>
     <div class="card">
@@ -345,7 +347,7 @@
       ① 电脑上进入文件所在目录，运行 <b>python -m http.server 8000</b>；<br>
       ② 手机与电脑连同一 WiFi，浏览器打开 <b>http://电脑IP:8000/罗舜_学习工作台.html</b>；<br>
       ③ 点浏览器「添加到主屏幕」，即成为一个离线 App（已配 manifest + service worker 缓存）；<br>
-      ④ 数据仍只存在该浏览器本地。</div>
+      ④ 数据在本浏览器本地；若要在多设备间同步，请点右上角「🔐 登录同步」（手机号验证码登录，云端按账号隔离）。</div>
     </div>
   </section>
 </div>
@@ -367,7 +369,8 @@
       <div><label>错因类型</label><select id="eType">
         <option>知识点漏洞型</option><option>方法选择型</option><option>粗心习惯型</option><option>概念混淆型</option><option>蒙题型</option>
       </select></div>
-      <div><label>所属章节（可选）</label><input id="eChapter" placeholder="如：小数乘法"></div>
+      <div><label>所属章节（可选，可联想已建章节）</label><input id="eChapter" placeholder="如：小数乘法" list="chapList"></div>
+      <datalist id="chapList"></datalist>
       <div class="full"><label>错在哪（一句话）</label><input id="eWhere" placeholder="错误发生在哪一步"></div>
       <div class="full"><label>反思（一句话教训）</label><input id="eReflect" placeholder="下次怎么避免"></div>
       <div class="full"><label class="row" style="gap:8px"><input type="checkbox" id="eGuess" style="width:auto"> 这是一道「蒙对」的题（假会，需重点验证）</label></div>
@@ -426,8 +429,30 @@
   </div>
 </div>
 
+<!-- 登录弹窗 -->
+<div class="modal-mask" id="loginModal">
+  <div class="modal">
+    <button class="closex" data-close>✕</button>
+    <h3>🔐 登录以云端同步</h3>
+    <p class="muted">登录后，错题和学习进度会存到云端，<b>换手机 / 换浏览器，登录同一账号即可同步</b>。未登录时数据仅保存在本机。</p>
+    <div class="flexform">
+      <div class="full"><label>手机号</label><input id="loginPhone" placeholder="11 位手机号，如 138…" inputmode="numeric"></div>
+      <div class="full"><label>短信验证码</label><div class="row">
+        <input id="loginCode" placeholder="6 位验证码" style="flex:1" inputmode="numeric">
+        <button class="ghost" id="loginSendBtn" type="button">获取验证码</button>
+      </div></div>
+    </div>
+    <div id="loginErr" class="muted" style="color:var(--red);min-height:18px"></div>
+    <div class="row" style="margin-top:12px;justify-content:flex-end">
+      <button class="ghost" data-close>取消</button>
+      <button id="loginSubmitBtn">登录 / 注册</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
 <script>
 /* ============ 数据层 ============ */
 const DB_KEY="luoshun_workbench_v1";
@@ -444,6 +469,95 @@ const REVIEW_DAYS=[0,1/24,1,3,7,30]; // 当天/1h/1d/3d/7d/30d
 const REVIEW_LABEL=["当天","1小时后","1天后","3天后","7天后","30天后"];
 const XP_RULES={addErr:100,guess:150,boss:500,feynman:100,review:20,master:300};
 
+/* ============ 云端同步（WorkBuddy Cloud Service） ============ */
+/* 公共配置：可安全内嵌前端；后端按账号隔离(RLS)，绝不在前端放任何密钥。 */
+const CLOUD_CONFIG={
+  endpoint:"https://luoshun-workbench.app.workbuddy.host",
+  oauthRelayBaseUrl:"https://www.workbuddy.cn/v2/as/genie-baas/oauth",
+  publishableKey:"wbpk_U6nzl5OcjACFMLYo30NCoG_jjNXSy7LZTMcf7eHlXigV01WWVPm8ykg"
+};
+let cloud=null, session=null, cloudRowId=null, cloudSaving=false, cloudDirty=false;
+try{ if(typeof WorkBuddyCloud!=="undefined"){ cloud=WorkBuddyCloud.createWorkBuddyCloud({endpoint:CLOUD_CONFIG.endpoint,oauthRelayBaseUrl:CLOUD_CONFIG.oauthRelayBaseUrl,publishableKey:CLOUD_CONFIG.publishableKey}); } }catch(e){ cloud=null; }
+let pendingOtp=null, codeTimer=null;
+
+function loginError(msg){const el=$("loginErr");if(el)el.textContent=msg||"";}
+async function sendPhoneCode(phone){
+  loginError("");
+  if(!cloud){loginError("云端未连接，无法登录（可先使用本机模式）");return;}
+  if(!/^1\d{10}$/.test(phone)){loginError("请输入正确的 11 位手机号");return;}
+  const sent=await cloud.auth.sendOtp({phone});
+  if(sent.error){loginError(sent.error.message||"发送失败，请稍后重试");return;}
+  pendingOtp={phone,verificationId:sent.data.verificationId,isExistingUser:sent.data.isExistingUser};
+  toast("验证码已发送，请查收短信");
+  startCodeCountdown();
+}
+function startCodeCountdown(){
+  const btn=$("loginSendBtn");if(!btn)return;let n=60;btn.disabled=true;btn.textContent=n+"s 后重发";
+  codeTimer=setInterval(()=>{n--;if(n<=0){clearInterval(codeTimer);btn.disabled=false;btn.textContent="获取验证码";}else btn.textContent=n+"s 后重发";},1000);
+}
+async function submitPhoneLogin(phone,code){
+  loginError("");
+  if(!pendingOtp||pendingOtp.phone!==phone){loginError("请先获取验证码");return;}
+  if(!/^\d{4,8}$/.test(code)){loginError("请输入收到的验证码");return;}
+  const done=await cloud.auth.verifyOtp({phone,verificationId:pendingOtp.verificationId,isExistingUser:pendingOtp.isExistingUser,token:code});
+  if(done.error){loginError(done.error.message||"验证失败，请重试");return;}
+  pendingOtp=null;if(codeTimer)clearInterval(codeTimer);
+  await onLoggedIn(done.data);
+}
+async function onLoggedIn(sess){
+  session=sess;
+  await cloudLoad();
+  hideModal("loginModal");
+  renderLoginBar();
+  const nm=(sess&&sess.user&&(sess.user.name||sess.user.phone))||"账号";
+  toast("已登录并同步："+nm);
+}
+async function cloudLoad(){
+  if(!cloud||!session)return;
+  const {data,error}=await cloud.database.from("workbench_data").select("id,payload,updated_at").maybeSingle();
+  if(error){console.warn("[cloud] 读取失败",error);return;}
+  if(data&&data.payload&&data.payload.profile){
+    cloudRowId=data.id;DB=data.payload;localStorage.setItem(DB_KEY,JSON.stringify(DB));renderAll();updateSavedInd();
+  }else{
+    await cloudSeed();
+  }
+}
+async function cloudSeed(){
+  if(!cloud||!session)return;
+  const {data,error}=await cloud.database.from("workbench_data").insert({payload:DB}).select("id").maybeSingle();
+  if(error){console.warn("[cloud] 首次写入失败",error);return;}
+  if(data)cloudRowId=data.id;toast("已把本机数据首次同步到云端");
+}
+async function cloudSave(){
+  if(!cloud||!session)return;
+  if(cloudSaving){cloudDirty=true;return;}
+  cloudSaving=true;
+  try{
+    if(cloudRowId){
+      const {error}=await cloud.database.from("workbench_data").update({payload:DB,updated_at:new Date().toISOString()}).eq("id",cloudRowId);
+      if(error)console.warn("[cloud] 保存失败",error);
+    }else{
+      const {data,error}=await cloud.database.from("workbench_data").insert({payload:DB}).select("id").maybeSingle();
+      if(error)console.warn("[cloud] 保存失败",error);else if(data)cloudRowId=data.id;
+    }
+  }finally{cloudSaving=false;if(cloudDirty){cloudDirty=false;cloudSave();}}
+}
+function renderLoginBar(){
+  const el=$("loginBar");if(!el)return;
+  if(session&&session.user){
+    const nm=(session.user.name||session.user.phone||"已登录");
+    el.innerHTML='<span class="pill green">☁️ 云端同步 · '+escapeHtml(String(nm))+'</span><button class="ghost sm" id="logoutBtn">退出</button>';
+    const b=$("logoutBtn");if(b)b.onclick=doLogout;
+  }else{
+    el.innerHTML='<button class="ghost sm" id="loginOpenBtn">🔐 登录同步</button>';
+    const b=$("loginOpenBtn");if(b)b.onclick=()=>showModal("loginModal");
+  }
+}
+async function doLogout(){
+  if(cloud)try{await cloud.auth.signOut();}catch(e){}
+  session=null;cloudRowId=null;renderLoginBar();updateSavedInd();toast("已退出（本机数据仍保留）");
+}
+
 let DB=load();
 function load(){
   try{const r=localStorage.getItem(DB_KEY);if(r)return JSON.parse(r);}catch(e){}
@@ -456,7 +570,7 @@ function defaultDB(){
     achievements:{}, xp:0, lastUpdated:""
   };
 }
-function save(){DB.lastUpdated=today();DB.lastSaved=Date.now();localStorage.setItem(DB_KEY,JSON.stringify(DB));pushSnapshot();updateSavedInd();}
+function save(){DB.lastUpdated=today();DB.lastSaved=Date.now();localStorage.setItem(DB_KEY,JSON.stringify(DB));pushSnapshot();updateSavedInd();if(session&&cloud)cloudSave();}
 function pushSnapshot(){
   try{
     let snaps=[];try{snaps=JSON.parse(localStorage.getItem(SNAP_KEY)||"[]");}catch(e){snaps=[];}
@@ -476,8 +590,8 @@ function restoreSnap(ts){
 }
 function updateSavedInd(){
   const el=$("savedInd");if(!el)return;
-  if(DB.lastSaved){const d=new Date(DB.lastSaved);const p=n=>String(n).padStart(2,"0");el.innerHTML='已自动保存 <b>'+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())+'</b> · 本地备份 '+listSnaps().length+' 份';}
-  else el.textContent="数据未改动";
+  if(DB.lastSaved){const d=new Date(DB.lastSaved);const p=n=>String(n).padStart(2,"0");const pre=session?'☁️ 已同步云端 · ':'已自动保存 ';el.innerHTML=pre+'<b>'+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())+'</b> · 本地备份 '+listSnaps().length+' 份';}
+  else el.textContent=session?'☁️ 云端同步已开启':'数据未改动';
 }
 function renderSnapList(){
   const sel=$("snapSelect");if(!sel)return;
@@ -492,6 +606,17 @@ function addDays(iso,days){const d=new Date(iso+"T00:00:00");d.setDate(d.getDate
 function escapeHtml(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));}
 function $(id){return document.getElementById(id);}
 function uid(p){return p+Math.random().toString(36).slice(2,7);}
+function uniqueChapters(){
+  const set=new Set();
+  DB.graphs.forEach(g=>{if(g.chapter)set.add(g.chapter);});
+  DB.errors.forEach(e=>{if(e.chapter)set.add(e.chapter);});
+  return Array.from(set).sort((a,b)=>a.localeCompare(b,"zh"));
+}
+function filterErrorsByChapter(ch){
+  switchTab("errors");
+  const sel=$("fChapter");if(sel)sel.value=ch;
+  listErrors();toast("已筛选章节："+ch);
+}
 function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2200);}
 function nextCode(prefix){let max=0;DB.errors.forEach(e=>{if(e.code&&e.code.startsWith(prefix)){const v=parseInt(e.code.slice(prefix.length));if(!isNaN(v)&&v>max)max=v;}});return prefix+String(max+1).padStart(3,"0");}
 function addXp(n,reason){DB.xp+=n;toast("+"+n+" XP · "+reason);checkLevelAch();save();renderTop();}
@@ -622,14 +747,16 @@ function renderErrors(){
   fillSubjectSelect($("fSubject"),"");$("fSubject").insertAdjacentHTML("afterbegin",'<option value="">全部学科</option>');
   $("fType").innerHTML='<option value="">全部错因</option>'+ERR_TYPES.map(t=>`<option>${t}</option>`).join("");
   $("fStatus").innerHTML='<option value="">全部状态</option><option>待修复</option><option>复习中</option><option>已掌握</option>';
+  $("fChapter").innerHTML='<option value="">全部章节</option>'+uniqueChapters().map(c=>`<option>${escapeHtml(c)}</option>`).join("");
   listErrors();
 }
 function listErrors(){
-  const fs=$("fSubject").value,ft=$("fType").value,fst=$("fStatus").value,fq=$("fSearch").value.trim();
+  const fs=$("fSubject").value,ft=$("fType").value,fst=$("fStatus").value,fch=$("fChapter").value,fq=$("fSearch").value.trim();
   let arr=DB.errors.slice().sort((a,b)=>a.date<b.date?1:-1);
   if(fs)arr=arr.filter(e=>e.subject===fs);
   if(ft)arr=arr.filter(e=>e.errorType===ft);
   if(fst)arr=arr.filter(e=>e.status===fst);
+  if(fch)arr=arr.filter(e=>(e.chapter||"")===fch);
   if(fq)arr=arr.filter(e=>(e.question+e.kp.join("")+e.source).includes(fq));
   if(!arr.length){$("errList").innerHTML='<div class="empty">没有符合条件的错题。点「+ 录入错题」开始吧。</div>';return;}
   $("errList").innerHTML=arr.map(e=>{
@@ -693,6 +820,7 @@ function openErrModal(id){
   if(e)e.kp.forEach(k=>addKpTag(k));
   $("eType").value=e?e.errorType:"知识点漏洞型";
   $("eChapter").value=e?e.chapter:"";
+  $("chapList").innerHTML=uniqueChapters().map(c=>'<option value="'+escapeHtml(c)+'">').join("");
   $("eWhere").value=e?e.errorWhere:"";
   $("eReflect").value=e?e.reflection:"";
   $("eGuess").checked=e?!!e.isGuess:false;
@@ -719,7 +847,7 @@ function renderGraph(){
   $("graphList").innerHTML=DB.graphs.slice().sort((a,b)=>(a.subject+a.grade+a.chapter)>(b.subject+b.grade+b.chapter)?1:-1).map(g=>{
     const m=g.mastery.map(m=>{const c={A:"green",B:"yellow",C:"orange",D:"red"}[m.level]||"gray";return `<span class="pill ${c}">${escapeHtml(m.kp)} · ${m.level}</span>`;}).join(" ");
     return `<div class="errcard">
-      <div class="head"><div><span class="code">${escapeHtml(g.subject)}</span> <span class="pill gray">${escapeHtml(g.grade)}</span> <b>${escapeHtml(g.chapter)}</b></div>
+      <div class="head"><div><span class="code">${escapeHtml(g.subject)}</span> <span class="pill gray">${escapeHtml(g.grade)}</span> <b style="cursor:pointer;color:var(--blue)" title="点此筛选该章错题" onclick="filterErrorsByChapter('${escapeHtml(g.chapter)}')">${escapeHtml(g.chapter)}</b></div>
       <div class="row"><button class="sm" onclick="editChap('${g.id}')">编辑</button><button class="sm warn" onclick="delChap('${g.id}')">删除</button></div></div>
       <details class="fold"><summary>查看笔记</summary><div class="muted" style="white-space:pre-wrap;margin-top:6px">${escapeHtml(g.notes||"（暂无）")}</div></details>
       <div style="margin-top:8px">${m||'<span class="muted">未标注掌握度</span>'}</div>
@@ -980,8 +1108,8 @@ $("eKpInput").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefaul
 $("addErrBtn").onclick=()=>openErrModal(null);
 $("addChapBtn").onclick=()=>openChapModal(null);
 $("addPracBtn").onclick=()=>openPracModal();
-$("fReset").onclick=()=>{$("fSubject").value="";$("fType").value="";$("fStatus").value="";$("fSearch").value="";listErrors();};
-["fSubject","fType","fStatus","fSearch"].forEach(id=>$(id).onchange=listErrors);
+$("fReset").onclick=()=>{$("fSubject").value="";$("fType").value="";$("fStatus").value="";$("fChapter").value="";$("fSearch").value="";listErrors();};
+["fSubject","fType","fStatus","fChapter","fSearch"].forEach(id=>$(id).onchange=listErrors);
 $("fSearch").oninput=listErrors;
 $("feynTarget").onchange=renderFeynPanel;
 $("saveProfile").onclick=saveProfile;
@@ -997,6 +1125,8 @@ $("aiCopyBtn").onclick=()=>copyText(aiPromptText());
 $("aiImportBtn").onclick=()=>{const m=importFromAI($("aiImport").value);$("aiImportMsg").textContent=m;toast(m);};
 $("imaExportBtn").onclick=exportToIMA;
 $("imaImportBtn2").onclick=()=>{const m=importFromAI($("imaImport").value);toast(m);};
+$("loginSendBtn").onclick=async()=>{await sendPhoneCode($("loginPhone").value.trim());};
+$("loginSubmitBtn").onclick=async()=>{await submitPhoneLogin($("loginPhone").value.trim(),$("loginCode").value.trim());};
 
 if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
   navigator.serviceWorker.register('sw.js').catch(()=>{});
@@ -1006,7 +1136,8 @@ window.addEventListener("storage",e=>{
     try{DB=JSON.parse(e.newValue);renderAll();updateSavedInd();toast("已从其他标签页同步");}catch(_){}
   }
 });
-renderTabs();renderTop();switchTab("home");updateSavedInd();
+renderTabs();renderTop();switchTab("home");updateSavedInd();renderLoginBar();
+(async()=>{ if(cloud){ try{ const {data: sess}=await cloud.auth.getSession(); if(sess){ session=sess; await cloudLoad(); renderLoginBar(); } }catch(e){} } })();
 </script>
 </body>
 </html>

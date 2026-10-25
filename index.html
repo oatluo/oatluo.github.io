@@ -119,6 +119,8 @@
   details.fold{margin:6px 0}
   details.fold summary{cursor:pointer;font-weight:700;color:var(--blue);padding:4px 0}
   .scrollx{overflow-x:auto}
+  .saved-ind{font-size:12px;color:#8a94a6;margin-top:6px;text-align:right}
+  .saved-ind b{color:#1a7f37}
 </style>
 </head>
 <body>
@@ -138,6 +140,7 @@
           <div class="track"><div class="fill" id="xpFill" style="width:0%"></div></div>
           <div class="txt" id="xpTxt">0 / 100 XP</div>
         </div>
+        <div class="saved-ind" id="savedInd">数据未改动</div>
       </div>
     </div>
   </div>
@@ -309,7 +312,19 @@
         <button class="ghost" id="exportBtn">⬇️ 导出备份(JSON)</button>
         <button class="ghost" id="importBtn">⬆️ 导入备份</button>
         <input type="file" id="importFile" accept="application/json" style="display:none">
+        <button class="ghost" id="snapNowBtn">💡 立即备份</button>
         <button class="warn" id="resetBtn">🗑️ 清空全部数据</button>
+      </div>
+      <div style="margin-top:14px;border-top:1px dashed #e3e8f0;padding-top:12px">
+        <div class="row" style="justify-content:space-between">
+          <b>🔁 自动备份（本机，最近 12 份）</b>
+          <span class="muted" id="snapCount">0 份</span>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <select id="snapSelect" style="flex:1"></select>
+          <button id="snapRestoreBtn">↩️ 恢复到此份</button>
+        </div>
+        <p class="muted" style="margin-top:8px">每次保存都会自动留一份时间点备份；误删或导入出错，可在此一键还原到任意历史点。跨设备请用上方「导出 / 导入」。</p>
       </div>
     </div>
     <div class="card">
@@ -416,6 +431,8 @@
 <script>
 /* ============ 数据层 ============ */
 const DB_KEY="luoshun_workbench_v1";
+const SNAP_KEY="luoshun_workbench_snaps_v1";
+const SNAP_MAX=12;
 const SUBJ_DEFAULT=["语文","数学","英语","科学","道德与法治"];
 const ERR_TYPES=["知识点漏洞型","方法选择型","粗心习惯型","概念混淆型","蒙题型"];
 const LEVELS=[
@@ -439,7 +456,35 @@ function defaultDB(){
     achievements:{}, xp:0, lastUpdated:""
   };
 }
-function save(){DB.lastUpdated=today();localStorage.setItem(DB_KEY,JSON.stringify(DB));}
+function save(){DB.lastUpdated=today();DB.lastSaved=Date.now();localStorage.setItem(DB_KEY,JSON.stringify(DB));pushSnapshot();updateSavedInd();}
+function pushSnapshot(){
+  try{
+    let snaps=[];try{snaps=JSON.parse(localStorage.getItem(SNAP_KEY)||"[]");}catch(e){snaps=[];}
+    snaps.push({ts:DB.lastSaved,date:today(),db:DB});
+    if(snaps.length>SNAP_MAX)snaps=snaps.slice(snaps.length-SNAP_MAX);
+    localStorage.setItem(SNAP_KEY,JSON.stringify(snaps));
+  }catch(e){/* 配额或解析异常，静默忽略，不阻塞主流程 */}
+}
+function listSnaps(){try{return JSON.parse(localStorage.getItem(SNAP_KEY)||"[]");}catch(e){return[];}}
+function restoreSnap(ts){
+  const s=listSnaps().find(x=>String(x.ts)===String(ts));
+  if(!s)return;
+  if(!confirm("恢复将覆盖当前数据，确定恢复到 "+s.date+" 的备份？"))return;
+  DB=JSON.parse(JSON.stringify(s.db));
+  localStorage.setItem(DB_KEY,JSON.stringify(DB));
+  renderAll();toast("已恢复备份："+s.date);updateSavedInd();
+}
+function updateSavedInd(){
+  const el=$("savedInd");if(!el)return;
+  if(DB.lastSaved){const d=new Date(DB.lastSaved);const p=n=>String(n).padStart(2,"0");el.innerHTML='已自动保存 <b>'+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())+'</b> · 本地备份 '+listSnaps().length+' 份';}
+  else el.textContent="数据未改动";
+}
+function renderSnapList(){
+  const sel=$("snapSelect");if(!sel)return;
+  const snaps=listSnaps();
+  sel.innerHTML=snaps.length?snaps.slice().reverse().map(s=>{const d=new Date(s.ts);const p=n=>String(n).padStart(2,"0");return '<option value="'+s.ts+'">'+s.date+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())+'</option>';}).join(""):'<option value="">暂无自动备份</option>';
+  const cnt=$("snapCount");if(cnt)cnt.textContent=snaps.length+" 份";
+}
 
 /* ============ 工具 ============ */
 function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
@@ -835,6 +880,7 @@ function renderSettings(){
   $("setName").value=DB.profile.name;$("setSchool").value=DB.profile.school;
   $("setGrade").value=DB.profile.grade;$("setRole").value=DB.profile.role;
   $("setSubjects").value=DB.profile.subjects.join(",");
+  renderSnapList();
 }
 function saveProfile(){
   DB.profile.name=$("setName").value.trim()||"罗舜";
@@ -943,6 +989,8 @@ $("exportBtn").onclick=exportData;
 $("importBtn").onclick=()=>$("importFile").click();
 $("importFile").onchange=e=>{if(e.target.files[0])importData(e.target.files[0]);};
 $("resetBtn").onclick=resetAll;
+$("snapNowBtn").onclick=()=>{save();toast("已立即备份");renderSnapList();};
+$("snapRestoreBtn").onclick=()=>{const v=$("snapSelect").value;if(v)restoreSnap(v);else toast("没有可选备份");};
 $("loadPresetBtn").onclick=loadPreset;
 $("aiExportBtn").onclick=exportToAI;
 $("aiCopyBtn").onclick=()=>copyText(aiPromptText());
@@ -953,7 +1001,12 @@ $("imaImportBtn2").onclick=()=>{const m=importFromAI($("imaImport").value);toast
 if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
   navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
-renderTabs();renderTop();switchTab("home");
+window.addEventListener("storage",e=>{
+  if(e.key===DB_KEY&&e.newValue){
+    try{DB=JSON.parse(e.newValue);renderAll();updateSavedInd();toast("已从其他标签页同步");}catch(_){}
+  }
+});
+renderTabs();renderTop();switchTab("home");updateSavedInd();
 </script>
 </body>
 </html>

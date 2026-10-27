@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>罗舜的学习工作台 · 费曼错题本 Pro</title>
+<title>我的学习工作台 · 费曼错题本 Pro</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#2f6fed">
 <style>
@@ -163,8 +163,8 @@
     <div class="brand">
       <div class="avatar">📚</div>
       <div>
-        <h1 id="brandName">罗舜的学习工作台</h1>
-        <p id="brandSub">五年级8班 · 中队长 · 长汀县实验小学</p>
+        <h1 id="brandName">我的学习工作台</h1>
+        <p id="brandSub">费曼学习法错题本 · 知识图谱与复习计划</p>
       </div>
     </div>
     <div class="levelbox">
@@ -599,7 +599,7 @@ function load(){
 }
 function defaultDB(){
   return {
-    profile:{name:"罗舜",school:"长汀县实验小学",grade:"五年级8班",role:"中队长",subjects:SUBJ_DEFAULT.slice()},
+    profile:{name:"",school:"",grade:"",role:"",subjects:SUBJ_DEFAULT.slice()},
     errors:[], graphs:[], practices:[], feynans:[],
     achievements:{}, xp:0, lastUpdated:""
   };
@@ -702,8 +702,8 @@ function doReview(e,ok){
 
 /* ============ 渲染：顶部 ============ */
 function renderTop(){
-  $("brandName").textContent=DB.profile.name+"的学习工作台";
-  $("brandSub").textContent=DB.profile.grade+" · "+DB.profile.role+" · "+DB.profile.school;
+  $("brandName").textContent="我的学习工作台";
+  $("brandSub").textContent="费曼学习法错题本 · 知识图谱与复习计划";
   const lv=levelOf(DB.xp);
   const idx=LEVELS.indexOf(lv);
   const next=LEVELS[idx+1];
@@ -1045,7 +1045,7 @@ function renderSettings(){
   renderSnapList();
 }
 function saveProfile(){
-  DB.profile.name=$("setName").value.trim()||"罗舜";
+  DB.profile.name=$("setName").value.trim()||"同学";
   DB.profile.school=$("setSchool").value.trim();
   DB.profile.grade=$("setGrade").value.trim();
   DB.profile.role=$("setRole").value.trim();
@@ -1055,7 +1055,7 @@ function saveProfile(){
 }
 function exportData(){
   const blob=new Blob([JSON.stringify(DB,null,2)],{type:"application/json"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="罗舜_学习工作台_备份_"+today()+".json";a.click();toast("已导出备份");
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="学习工作台_备份_"+today()+".json";a.click();toast("已导出备份");
 }
 function importData(file){
   const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.profile||!Array.isArray(d.errors))throw 0;if(confirm("导入将覆盖当前数据，确定？")){DB=d;save();renderAll();toast("导入成功");}}catch(e){toast("文件格式错误");}};r.readAsText(file);}

@@ -330,10 +330,10 @@
     <div class="card">
       <h2>⚙️ 学生档案</h2>
       <div class="flexform">
-        <div><label>姓名</label><input id="setName" placeholder="罗舜"></div>
-        <div><label>学校</label><input id="setSchool" placeholder="长汀县实验小学"></div>
-        <div><label>年级班级</label><input id="setGrade" placeholder="五年级8班"></div>
-        <div><label>职务</label><input id="setRole" placeholder="中队长"></div>
+        <div><label>姓名</label><input id="setName" placeholder="姓名（选填）"></div>
+        <div><label>学校</label><input id="setSchool" placeholder="学校名称（选填）"></div>
+        <div><label>年级班级</label><input id="setGrade" placeholder="年级·班级（选填）"></div>
+        <div><label>职务</label><input id="setRole" placeholder="职务（选填）"></div>
       </div>
       <label>学科列表（逗号分隔，可改）</label>
       <input id="setSubjects" placeholder="语文,数学,英语,科学,道德与法治">
@@ -379,7 +379,7 @@
       <h2>📱 手机 / 离线部署（PWA）</h2>
       <div class="muted" style="line-height:1.9">本工作台是单文件网页。想在手机上当 App 用、断网也能开：<br>
       ① 电脑上进入文件所在目录，运行 <b>python -m http.server 8000</b>；<br>
-      ② 手机与电脑连同一 WiFi，浏览器打开 <b>http://电脑IP:8000/罗舜_学习工作台.html</b>；<br>
+      ② 手机与电脑连同一 WiFi，浏览器打开 <b>http://电脑IP:8000/学习工作台.html</b>；<br>
       ③ 点浏览器「添加到主屏幕」，即成为一个离线 App（已配 manifest + service worker 缓存）；<br>
       ④ 数据在本浏览器本地；若要在多设备间同步，请点右上角「🔐 登录同步」（手机号验证码登录，云端按账号隔离）。</div>
     </div>
@@ -1104,7 +1104,7 @@ function aiPromptText(){
   const d=buildAIExport();
   return "【任务】帮小学生 "+d._meta.student+"（"+d._meta.grade+"）分析数学/语文错题并出题。\n【学生信息】"+JSON.stringify(d._meta)+"\n【薄弱知识点(C/D)】"+JSON.stringify(d.weakKnowledge,null,1)+"\n【高频易错(≥2次)】"+JSON.stringify(d.freqKnowledge,null,1)+"\n【待复习错题】"+JSON.stringify(d.pendingErrors,null,1)+"\n\n请按 meta.purpose 的要求，返回如下 schema 的 JSON（只需填充 errors/practices/feynans/graphs 四个数组）：\n"+JSON.stringify(d._meta.schema,null,1);
 }
-function exportToAI(){const d=buildAIExport();downloadText("罗舜_AI处理包_"+today()+".json",JSON.stringify(d,null,2));toast("已导出 AI 处理包（JSON）");}
+function exportToAI(){const d=buildAIExport();downloadText("AI处理包_"+today()+".json",JSON.stringify(d,null,2));toast("已导出 AI 处理包（JSON）");}
 function importFromAI(text){
   let d;try{d=JSON.parse(text);}catch(e){return "❌ JSON 解析失败："+e.message;}
   let ne=0,np=0,nf=0,ng=0;
@@ -1116,7 +1116,7 @@ function importFromAI(text){
   save();renderAll();return "✅ 导入成功：错题+"+ne+" 练习+"+np+" 费曼+"+nf+" 图谱+"+ng;
 }
 function exportToIMA(){
-  let md="# 罗舜_学情总览_"+today()+"\n\n> 学生："+DB.profile.name+" · "+DB.profile.grade+" · "+DB.profile.school+"\n\n";
+  let md="# 学情总览_"+today()+"\n\n> 学生："+DB.profile.name+" · "+DB.profile.grade+" · "+DB.profile.school+"\n\n";
   md+="## 一、易错记录\n\n";
   DB.errors.slice().sort((a,b)=>a.date<b.date?1:-1).forEach(e=>{md+=`### 错题 #${e.code}（${e.subject}）\n- 日期：${e.date}\n- 来源：${e.source||"-"}\n- 题目：${e.question}\n- 我的答案：${e.myAnswer||"-"}\n- 正确答案：${e.correctAnswer||"-"}\n- 错因：${e.errorType}\n- 知识点：${e.kp.join("、")||"-"}\n- 错在哪：${e.errorWhere||"-"}\n- 反思：${e.reflection||"-"}\n- 状态：${e.status}\n\n`;});
   md+="## 二、知识图谱\n\n";
@@ -1127,7 +1127,7 @@ function exportToIMA(){
   md+="## 四、学情总览\n\n";
   let done=0,pending=0,over=0,mas=0;DB.errors.forEach(e=>{if(e.status==="已掌握"){mas++;return;}const st=reviewState(e);if(st.next==null){mas++;}else if(st.overdue)over++;else pending++;});
   md+=`- 错题总数：${DB.errors.length}\n- 已掌握：${mas}\n- 待复习：${pending}\n- 超期：${over}\n- 章节图谱：${DB.graphs.length}\n- 成就：${Object.keys(DB.achievements).length}/${ACHS.length}\n`;
-  downloadText("罗舜_IMA导出_"+today()+".md",md,"text/markdown;charset=utf-8");toast("已导出 IMA 包（Markdown）");
+  downloadText("IMA导出_"+today()+".md",md,"text/markdown;charset=utf-8");toast("已导出 IMA 包（Markdown）");
 }
 
 /* ============ 弹窗 / 初始化 ============ */
